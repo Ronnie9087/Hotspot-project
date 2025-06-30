@@ -19,6 +19,8 @@ import {
   type InsertJob
 } from "@shared/schema";
 
+import { getInternetPlans } from "./plans"; // Adjust path if needed
+
 export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
@@ -66,48 +68,32 @@ export class MemStorage implements IStorage {
     this.products = new Map();
     this.jobs = new Map();
     this.currentId = 1;
-    
-    this.seedData();
   }
 
-  private seedData() {
-    // Seed Internet Plans
-    const plans: InsertInternetPlan[] = [
-      {
-        name: "Basic Plan",
-        price: "29.00",
-        downloadSpeed: "25 Mbps",
-        uploadSpeed: "5 Mbps",
-        dataLimit: "500 GB",
-        features: ["24/7 support"],
-        isPopular: false,
-      },
-      {
-        name: "Premium Plan",
-        price: "59.00",
-        downloadSpeed: "100 Mbps",
-        uploadSpeed: "20 Mbps",
-        dataLimit: "Unlimited",
-        features: ["Priority support"],
-        isPopular: true,
-      },
-      {
-        name: "Enterprise Plan",
-        price: "99.00",
-        downloadSpeed: "500 Mbps",
-        uploadSpeed: "100 Mbps",
-        dataLimit: "Unlimited",
-        features: ["Dedicated support"],
-        isPopular: false,
-      },
-    ];
+  // New async initializer to call seedData
+  async initialize() {
+    await this.seedData();
+  }
+
+  private async seedData() {
+    // Seed Internet Plans from getInternetPlans() async function
+    const plans = await getInternetPlans();
 
     plans.forEach(plan => {
       const id = this.currentId++;
-      this.internetPlans.set(id, { ...plan, id });
+      const planToInsert: InsertInternetPlan = {
+        name: plan.name,
+        price: plan.price,
+        downloadSpeed: plan.downloadSpeed,
+        uploadSpeed: plan.uploadSpeed,
+        dataLimit: plan.dataLimit,
+        features: [plan.support],  // convert single string to array
+        isPopular: plan.isPopular,
+      };
+      this.internetPlans.set(id, { ...planToInsert, id });
     });
 
-    // Seed Restaurants
+    // Seed Restaurants (unchanged)
     const restaurantData: InsertRestaurant[] = [
       {
         name: "Mama's Kitchen",
@@ -130,7 +116,7 @@ export class MemStorage implements IStorage {
       this.restaurants.set(id, { ...restaurant, id });
     });
 
-    // Seed Products
+    // Seed Products (unchanged)
     const productData: InsertProduct[] = [
       {
         name: "Fresh Vegetables Bundle",
@@ -160,7 +146,7 @@ export class MemStorage implements IStorage {
       this.products.set(id, { ...product, id });
     });
 
-    // Seed Jobs
+    // Seed Jobs (unchanged)
     const jobData: InsertJob[] = [
       {
         title: "Marketing Assistant",
@@ -289,4 +275,7 @@ export class MemStorage implements IStorage {
   }
 }
 
+// Create instance
 export const storage = new MemStorage();
+// Initialize async data seed outside constructor
+await storage.initialize();

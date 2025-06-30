@@ -1,14 +1,29 @@
+// frontend/components/InternetService.tsx
+
 import { Link } from "wouter";
 import { ArrowLeft, Wifi, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { InternetPlan } from "@shared/schema";
+
+// Mirror backend InternetPlan type for type safety
+export type InternetPlan = {
+  id: string;
+  name: string;
+  price: number;
+  isPopular: boolean;
+  features: string[];
+};
 
 export default function InternetService() {
   const { data: plans, isLoading } = useQuery<InternetPlan[]>({
     queryKey: ["/api/internet-plans"],
+    queryFn: () =>
+      fetch("/api/internet-plans").then((res) => {
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res.json();
+      }),
   });
 
   if (isLoading) {
@@ -63,23 +78,10 @@ export default function InternetService() {
                 )}
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">{plan.name}</h3>
                 <div className="text-3xl font-bold text-primary mb-4">
-                  ${plan.price}
-                  <span className="text-lg font-normal text-gray-500">/month</span>
+                  KES {plan.price}
                 </div>
                 <ul className="space-y-2 text-sm text-gray-600 mb-6">
-                  <li className="flex items-center">
-                    <Check className="h-4 w-4 text-green-500 mr-2" />
-                    {plan.downloadSpeed} download
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="h-4 w-4 text-green-500 mr-2" />
-                    {plan.uploadSpeed} upload
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="h-4 w-4 text-green-500 mr-2" />
-                    {plan.dataLimit} data
-                  </li>
-                  {plan.features.map((feature, index) => (
+                  {(plan.features || []).map((feature, index) => (
                     <li key={index} className="flex items-center">
                       <Check className="h-4 w-4 text-green-500 mr-2" />
                       {feature}
